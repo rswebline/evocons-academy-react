@@ -35,7 +35,7 @@ function Hero() {
             <p className="hero-description">Evocons Academy è lo spazio di formazione dedicato a professionisti, studenti e appassionati che vogliono acquisire competenze concrete nell'intelligenza artificiale e nelle tecnologie digitali.</p>
             <div className="hero-actions">
               <a href="#corsi" className="button button-primary">Scopri i corsi <ArrowRight size={18}/></a>
-              <a href="#perche-academy" className="button button-outline">Come funziona <ArrowUpRight size={17}/></a>
+              <a href="#metodo" className="button button-outline">Come funziona <ArrowUpRight size={17}/></a>
             </div>
             <div className="hero-highlights" aria-label="Caratteristiche della formazione">
               <div><MonitorPlay size={22}/><span>Live online<br/>e in presenza</span></div>
@@ -68,8 +68,8 @@ function Hero() {
 
 
 const courses = [
-  {slug:'ai-per-il-lavoro',kind:'CORSO BREVE',title:'AI per il lavoro',description:'Impara a usare l’intelligenza artificiale per lavorare meglio, risparmiare tempo e ottenere risultati concreti.',duration:'6 settimane',format:'Live online · In presenza',icon:Lightbulb,theme:'work',label:'Percorso introduttivo',image:'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=960&q=85',imageAlt:'Professionista al lavoro in un ambiente digitale'},
-  {slug:'ai-automation-specialist',kind:'SPECIALIZZAZIONE',title:'AI Automation Specialist',description:'Dagli strumenti AI ai workflow: scopri come progettare automazioni utili per attività e processi reali.',duration:'Durata da definire',format:'Live online · In presenza',icon:Workflow,theme:'automation',label:'Percorso specialistico',image:'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=960&q=85',imageAlt:'Persone che collaborano utilizzando strumenti digitali'},
+  {slug:'ai-per-il-lavoro',kind:'CORSO BREVE',title:'AI per il lavoro',description:'Impara a usare l’intelligenza artificiale per lavorare meglio, risparmiare tempo e ottenere risultati concreti.',duration:'6 settimane',format:'Live online · In presenza',icon:Lightbulb,theme:'work',label:'Percorso introduttivo',image:'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=960&q=85',imageAlt:'Spazio di lavoro contemporaneo per sviluppare competenze digitali'},
+  {slug:'ai-automation-specialist',kind:'SPECIALIZZAZIONE',title:'AI Automation Specialist',description:'Dagli strumenti AI ai workflow: scopri come progettare automazioni utili per attività e processi reali.',duration:'Durata da definire',format:'Live online · In presenza',icon:Workflow,theme:'automation',label:'Percorso specialistico',image:'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=960&q=85',imageAlt:'Dashboard di analisi dati e processi digitali'},
   {slug:'ai-engineering',kind:'MASTER',title:'AI Engineering',description:'Progetta applicazioni intelligenti con LLM, RAG e agenti AI, partendo dalle competenze di sviluppo software.',duration:'5–6 mesi · ipotesi',format:'Con partner formativo',icon:Code2,theme:'engineering',label:'Master in definizione',image:'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=960&q=85',imageAlt:'Schermo con codice software durante lo sviluppo di applicazioni'}
 ];
 
@@ -103,14 +103,14 @@ function Audience(){
 }
 
 function Method(){
-  return <section id="metodo" className="section method-section" aria-labelledby="method-title"><div className="container"><p className="eyebrow">COME SI IMPARA</p><h2 id="method-title">Formazione concreta, con persone vere.</h2><p className="method-lead">Un modello che combina confronto, sperimentazione e applicazione.</p><div className="method-grid">
+  return <section id="metodo" className="section method-section" aria-labelledby="method-title"><div className="container"><p className="eyebrow">COME SI IMPARA</p><h2 id="method-title">Dalla teoria alla pratica, insieme.</h2><p className="method-lead">Non solo contenuti da ascoltare: lezioni dal vivo, esercitazioni e confronto diretto con il docente.</p><div className="method-grid">
     <article><div className="method-icon"><MonitorPlay/></div><h3>Lezioni in diretta</h3><p>Segui il docente, poni domande e confrontati con gli altri partecipanti.</p></article>
     <article><div className="method-icon"><CheckCircle2/></div><h3>Impari facendo</h3><p>Applica quanto appreso attraverso esercizi, esempi e progetti.</p></article>
-    <article><div className="method-icon"><MapPin/></div><h3>Online o in presenza</h3><p>Scegli tra i formati disponibili per il percorso di tuo interesse.</p></article>
+    <article><div className="method-icon"><MapPin/></div><h3>Il formato adatto al percorso</h3><p>Formazione a distanza in diretta e, dove previsto, attività in presenza.</p></article>
   </div></div></section>
 }
 
-function FinalCta(){return <section className="final-cta-section"><div className="container final-cta"><div><p className="eyebrow">IL PROSSIMO PASSO</p><h2>Il futuro si costruisce<br/>con nuove competenze.</h2><p>Scopri le proposte formative di Evocons Academy.</p></div><a href="#corsi" className="button final-cta-button">Scopri i percorsi <ArrowRight size={18}/></a></div></section>}
+function FinalCta(){return <section className="final-cta-section"><div className="container final-cta"><div><p className="eyebrow">DA DOVE COMINCIARE?</p><h2>Ogni percorso inizia<br/>da una scelta concreta.</h2><p>Confronta le proposte e individua quella più vicina ai tuoi obiettivi.</p></div><a href="#corsi" className="button final-cta-button">Confronta i corsi <ArrowRight size={18}/></a></div></section>}
 
 function Footer() {
   return (
