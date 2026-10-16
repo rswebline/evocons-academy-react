@@ -27,21 +27,43 @@
     content="Impara ad applicare l'intelligenza artificiale con percorsi pratici online e in presenza." />
   <meta name="twitter:image" content="https://academy.evocons.it/og-academy.jpg" />
   <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
     {
-      "@context":"https://schema.org",
-      "@type":"WebSite",
-      "name":"Evocons Academy",
-      "url":"https://academy.evocons.it/",
-      "inLanguage":"it-IT",
-      "description":"Percorsi formativi pratici di intelligenza artificiale e competenze digitali.",
-      "publisher":{"@type":"Organization","name":"Evocons","url":"https://www.evocons.it/"}
+      "@type": "Organization",
+      "@id": "https://www.evocons.it/#organization",
+      "name": "Evocons",
+      "url": "https://www.evocons.it/",
+      "description": "Consulenza, formazione e innovazione tecnologica per la trasformazione digitale delle organizzazioni."
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://academy.evocons.it/#website",
+      "name": "Evocons Academy",
+      "url": "https://academy.evocons.it/",
+      "inLanguage": "it-IT",
+      "description": "Corsi pratici di intelligenza artificiale e competenze digitali per professionisti, studenti e freelance, con formazione online in diretta.",
+      "publisher": {
+        "@id": "https://www.evocons.it/#organization"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://academy.evocons.it/#webpage",
+      "url": "https://academy.evocons.it/",
+      "name": "Evocons Academy | Corsi pratici di AI e competenze digitali",
+      "inLanguage": "it-IT",
+      "isPartOf": {
+        "@id": "https://academy.evocons.it/#website"
+      }
     }
-    </script>
+  ]
+}
+  </script>
   <!-- Cloudflare Web Analytics -->
-  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js"
-    data-cf-beacon='{"token":"81b6710f619e488f8fed9384b59910f4"}'>
-    </script>
-  <!-- End Cloudflare Web Analytics -->
+  <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js'
+    data-cf-beacon='{"token": "81b6710f619e488f8fed9384b59910f4"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 
 <body>
