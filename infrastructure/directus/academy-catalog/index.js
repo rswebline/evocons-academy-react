@@ -6,6 +6,22 @@ import { pipeline } from 'node:stream/promises';
 
 const UPLOADS_DIR = '/opt/directus/uploads';
 
+const IMAGE_EXTENSIONS = {
+  'image/avif': 'avif',
+  'image/webp': 'webp',
+  'image/jpeg': 'jpg',
+  'image/png': 'png'
+};
+
+function getAllowedImageType(file) {
+  if (!file || typeof file.filename_disk !== 'string') return null;
+  const extension = IMAGE_EXTENSIONS[file.type];
+  if (!extension) return null;
+  const allowedExtensions = file.type === 'image/jpeg' ? 'jpe?g' : extension;
+  const filenamePattern = new RegExp(`^[a-zA-Z0-9_-]+\\.(${allowedExtensions})$`, 'i');
+  return filenamePattern.test(file.filename_disk) ? file.type : null;
+}
+
 export default {
   id: 'academy-catalog',
 
@@ -170,11 +186,8 @@ router.get('/courses/:slug/modules/:moduleId/image', async (req, res) => {
       .where('id', module.image)
       .first();
 
-    if (!file || file.type !== 'image/avif') return res.sendStatus(404);
-
-    if (!/^[a-zA-Z0-9_-]+\.avif$/.test(file.filename_disk)) {
-      return res.sendStatus(404);
-    }
+    const contentType = getAllowedImageType(file);
+    if (!contentType) return res.sendStatus(404);
 
     const filePath = join(UPLOADS_DIR, file.filename_disk);
     const fileInfo = await stat(filePath);
@@ -182,7 +195,7 @@ router.get('/courses/:slug/modules/:moduleId/image', async (req, res) => {
     if (!fileInfo.isFile()) return res.sendStatus(404);
 
     res.set({
-      'Content-Type': 'image/avif',
+      'Content-Type': contentType,
       'Content-Length': String(fileInfo.size),
       'Cache-Control': 'public, max-age=3600',
       'X-Content-Type-Options': 'nosniff'
@@ -223,14 +236,8 @@ const imageField = imageFields[req.params.imageType];
           .where('id', course[imageField])
           .first();
 
-        if (!file || file.type !== 'image/avif') {
-          return res.sendStatus(404);
-        }
-
-        // filename_disk deve essere un nome, non un percorso.
-        if (!/^[a-zA-Z0-9_-]+\.avif$/.test(file.filename_disk)) {
-          return res.sendStatus(404);
-        }
+        const contentType = getAllowedImageType(file);
+        if (!contentType) return res.sendStatus(404);
 
         const filePath = join(UPLOADS_DIR, file.filename_disk);
         const fileInfo = await stat(filePath);
@@ -240,7 +247,7 @@ const imageField = imageFields[req.params.imageType];
         }
 
         res.set({
-          'Content-Type': 'image/avif',
+          'Content-Type': contentType,
           'Content-Length': String(fileInfo.size),
           'Cache-Control': 'public, max-age=3600',
           'X-Content-Type-Options': 'nosniff'
