@@ -128,9 +128,29 @@ function Courses(){
       const image = course.image ? `${API_BASE_URL}/academy/courses/${encodeURIComponent(course.slug)}/image` : fallbackImage;
       const imageAlt = presentation?.imageAlt || 'Ambiente di formazione digitale';
       const detailAvailable = Boolean(course.slug);
+      const hours = Number(course.duration_hours);
+
+const durationLabel =
+  Number.isFinite(hours) && hours > 0
+    ? `${hours.toLocaleString('it-IT')} ore`
+    : 'Durata da definire';
+
+const deliveryLabels = {
+  online_live: 'Online in diretta',
+  in_person: 'In presenza',
+  hybrid: 'Modalità ibrida'
+};
+
+const formatLabel =
+  deliveryLabels[course.delivery_mode] || 'Modalità da confermare';
+
       return <article className="course-card" key={course.id || course.slug}>
         <div className={`course-art course-art-${theme}`}><img className="course-art-image" src={image} alt={imageAlt} loading="lazy" decoding="async" onError={event => { if (event.currentTarget.src !== fallbackImage) event.currentTarget.src = fallbackImage; }}/><span className="course-kind">{presentation?.kind || 'CORSO'}</span><span className="course-art-caption">{presentation?.label || 'Evocons Academy'}</span></div>
-        <div className="course-body"><h3>{course.title}</h3><p>{course.description || 'Scopri il percorso formativo di Evocons Academy.'}</p>{presentation && <div className="course-meta"><span><Clock3 size={15}/>{presentation.duration}</span><span><MonitorPlay size={15}/>{presentation.format}</span></div>}<a className="course-status course-link" href={detailAvailable ? `/corsi/${encodeURIComponent(course.slug)}/` : contactUrl}>{detailAvailable ? 'Scopri il corso →' : 'Richiedi informazioni →'}</a></div>
+        <div className="course-body"><h3>{course.title}</h3><p>{course.description || 'Scopri il percorso formativo di Evocons Academy.'}</p><div className="course-meta">
+  <span><Clock3 size={15}/>{durationLabel}</span>
+  <span><MonitorPlay size={15}/>{formatLabel}</span>
+</div>
+<a className="course-status course-link" href={detailAvailable ? `/corsi/${encodeURIComponent(course.slug)}/` : contactUrl}>{detailAvailable ? 'Scopri il corso →' : 'Richiedi informazioni →'}</a></div>
       </article>;
     })}</div>}
     <p className="course-disclaimer">I micro-corsi si possono seguire singolarmente oppure come percorso completo a condizioni agevolate. Prezzi, calendari e iscrizioni saranno comunicati successivamente.</p>
