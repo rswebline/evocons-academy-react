@@ -29,7 +29,7 @@ async function withTransactionRetry(database, operation) {
   }
 }
 
-const NOTICE_VERSION = 'test-v1';
+const NOTICE_VERSION = '1.1';
 
 const ALLOWED_FIELDS = new Set([
   'first_name',
