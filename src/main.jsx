@@ -240,6 +240,19 @@ function EditorialTitle({ value, fallback }) {
   return split ? <>{split[1]}<br/><span>{split[2]}</span></> : <>{text}</>;
 }
 
+function CourseHowItWorks({ hoursLabel }) {
+  const items = [
+    { Icon: MonitorPlay, title: 'Lezioni online in diretta', description: 'Partecipa dal vivo, poni domande e confrontati con il docente e gli altri partecipanti.' },
+    { Icon: Clock3, title: 'Calendario programmato', description: `Il percorso prevede ${hoursLabel} di formazione. Giorni e orari saranno comunicati prima dell’avvio.` },
+    { Icon: CheckCircle2, title: 'Attività pratiche', description: 'Esercitazioni e applicazioni guidate per trasferire quanto appreso nel lavoro.' },
+    { Icon: BookOpen, title: 'Materiali e recupero', description: 'Le eventuali registrazioni delle dirette potranno essere rese disponibili agli iscritti, secondo le condizioni comunicate per ciascuna edizione.' }
+  ];
+  return <section className="section course-how" aria-labelledby="course-how-title"><div className="container">
+    <div className="course-how-heading"><p className="eyebrow">LA TUA ESPERIENZA FORMATIVA</p><h2 id="course-how-title">Come funziona il corso?</h2><p>Un percorso online, guidato e interattivo: la partecipazione in diretta è al centro dell’esperienza.</p></div>
+    <div className="course-how-grid">{items.map(({ Icon, title, description }) => <article className="course-how-item" key={title}><div className="course-how-icon"><Icon size={25} aria-hidden="true"/></div><h3>{title}</h3><p>{description}</p></article>)}</div>
+  </div></section>;
+}
+
 function CoursePage(){
   const isPilotCourse = courseSlug === 'ai-per-il-lavoro';
   const [courseModules, setCourseModules] = React.useState(isPilotCourse ? modules : []);
@@ -326,7 +339,7 @@ function CoursePage(){
       <div><a className="course-back" href="/#corsi">← Tutti i percorsi</a><p className="eyebrow">{isMicroCourse ? "MICRO-CORSO" : "EVOCONS ACADEMY"} · {courseDetails.title.toLocaleUpperCase("it-IT")}</p>
         <h1><EditorialTitle value={courseDetails?.hero_title} fallback={courseDetails.title}/></h1>
         <p className="course-hero-lead">{courseDetails?.hero_description || courseDetails.description}</p>
-        <div className="course-facts"><span><MonitorPlay size={18}/> Online live</span><span><Clock3 size={18}/> {hoursLabel}{moduleCount ? ` · ${moduleCount} incontri` : ""}</span>{isPilotCourse && <span><Users size={18}/> Nessun prerequisito tecnico</span>}</div>
+        <div className="course-facts"><span><MonitorPlay size={18}/> Online live</span><span><Clock3 size={18}/> {hoursLabel}{moduleCount ? ` · ${moduleCount} moduli` : ""}</span>{isPilotCourse && <span><Users size={18}/> Nessun prerequisito tecnico</span>}</div>
         <div className="course-hero-actions"><a href="#programma" className="button button-primary">Esplora il programma <ArrowRight size={17}/></a><a href={interestUrl} className="button button-outline">Manifesta interesse <ArrowUpRight size={17}/></a></div>
         <p className="course-note">Calendario, quota e iscrizioni saranno comunicati successivamente.</p>
       </div>
@@ -338,7 +351,7 @@ function CoursePage(){
 } alt="Professionisti che collaborano e apprendono insieme"/><div className="course-image-label"
       ><Sparkles size={20}/> Impara facendo, in diretta.</div></div>
     </div></section>
-    <section className="course-metrics" aria-label="Il corso in sintesi"><div className="container course-metrics-grid"><div><Clock3/><strong>{Number.isFinite(totalHours) && totalHours > 0 ? totalHours.toLocaleString("it-IT") : "—"} <small>ore</small></strong><span>Formazione online in diretta</span></div><div><MonitorPlay/><strong>{moduleCount || "—"} <small>incontri</small></strong><span>Programma del corso</span></div><div><Users/><strong>Live <small>con il docente</small></strong><span>Domande, confronto ed esercitazioni</span></div></div></section>
+    <section className="course-metrics" aria-label="Il corso in sintesi"><div className="container course-metrics-grid"><div><Clock3/><strong>{Number.isFinite(totalHours) && totalHours > 0 ? totalHours.toLocaleString("it-IT") : "—"} <small>ore</small></strong><span>Formazione online in diretta</span></div><div><MonitorPlay/><strong>{moduleCount || "—"} <small>moduli</small></strong><span>Programma del corso</span></div><div><Users/><strong>Live <small>con il docente</small></strong><span>Domande, confronto ed esercitazioni</span></div></div></section>
     <section className="section course-overview"><div className="container course-overview-grid"><div className="course-overview-copy"><p className="eyebrow">IL PUNTO DI PARTENZA</p><h2><EditorialTitle value={courseDetails?.overview_title} fallback={courseDetails.title}/></h2><p>{courseDetails?.overview_text || courseDetails.description}</p>{isPilotCourse && <div className="course-benefits"><div><CheckCircle2/><span>Nessun prerequisito tecnico</span></div><div><CheckCircle2/><span>Esercitazioni guidate su attività reali</span></div><div><CheckCircle2/><span>Confronto diretto con il docente</span></div></div>}</div><div className="course-overview-visual"><img src={
   courseDetails?.overview_image
     ? `${API_BASE_URL}/academy/courses/${encodeURIComponent(courseDetails.slug)}/overview-image`
@@ -374,6 +387,7 @@ function CoursePage(){
       </article>)}</div>
       <div className="course-program-cta"><div><strong>Vuoi capire se è il percorso giusto?</strong><span>Parliamo dei tuoi obiettivi, senza impegno.</span></div><a className="button button-primary" href={interestUrl}>Manifesta interesse <ArrowRight size={17}/></a></div>
     </div></section>
+    <CourseHowItWorks hoursLabel={hoursLabel}/>
     <section className="section course-outcomes"><div className="container">
       <div className="course-outcomes-editorial"><div className="course-outcomes-image"><img src={
   courseDetails?.outcomes_image

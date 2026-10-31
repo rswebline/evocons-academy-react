@@ -243,3 +243,16 @@
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.35);
 }
+
+/* Course detail: how it works */
+.course-how{background:#f5f8ff}
+.course-how-heading{max-width:760px;margin-bottom:35px}
+.course-how-heading h2{margin:12px 0 15px;color:#071b3d;line-height:1.13}
+.course-how-heading>p:last-child{color:#50617d;line-height:1.7}
+.course-how-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.course-how-item{padding:27px 24px;background:#fff;border:1px solid #e3eaf6;border-radius:17px}
+.course-how-icon{width:51px;height:51px;display:flex;align-items:center;justify-content:center;background:#eaf1ff;color:#2458f5;border-radius:13px;margin-bottom:21px}
+.course-how-item h3{margin:0 0 12px;color:#071b3d;font-size:19px;line-height:1.35}
+.course-how-item p{margin:0;color:#50617d;font-size:15px;line-height:1.65}
+@media(max-width:1000px){.course-how-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.course-how-grid{grid-template-columns:1fr}.course-how-item{padding:24px}.course-how-heading{margin-bottom:25px}}
