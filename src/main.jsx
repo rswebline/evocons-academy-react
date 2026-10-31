@@ -117,12 +117,17 @@ function Courses(){
   }, []);
 
   return <section id="corsi" className="section courses-section" aria-labelledby="courses-title"><div className="container">
-    <div className="section-heading"><div><p className="eyebrow">I PERCORSI</p><h2 id="courses-title">Trova il percorso giusto per te.</h2><p>Dal primo utilizzo dell'AI alla specializzazione tecnica.</p></div><span className="section-hint">Micro-corsi, specializzazioni e master</span></div>
+    <div className="section-heading"><div><p className="eyebrow">I PERCORSI</p><h2 id="courses-title">Trova il percorso giusto per te.</h2><p>Dal primo utilizzo dell'AI alla specializzazione tecnica.</p></div><span className="section-hint">Micro-corsi e percorsi Professional</span></div>
     {catalogStatus === 'loading' && <p role="status">Caricamento dei corsi in corso…</p>}
     {catalogStatus === 'error' && <p role="alert">Il catalogo non è momentaneamente disponibile. Riprova più tardi.</p>}
     {catalogStatus === 'ready' && publishedCourses.length === 0 && <p>Al momento non ci sono corsi pubblicati.</p>}
     {catalogStatus === 'ready' && publishedCourses.length > 0 && <div className="course-grid">{publishedCourses.map(course => {
+      const isProfessional = course.category === 'specialization';
       const presentation = courses.find(item => item.slug === course.slug);
+const categoryLabel =
+  isProfessional ? 'PROFESSIONAL' :
+  course.category === 'micro-course' ? 'MICRO-CORSO' :
+  'CORSO';
       const theme = presentation?.theme || 'work';
       const fallbackImage = presentation?.image || 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=960&q=85';
       const image = course.image ? `${API_BASE_URL}/academy/courses/${encodeURIComponent(course.slug)}/image` : fallbackImage;
@@ -145,7 +150,9 @@ const formatLabel =
   deliveryLabels[course.delivery_mode] || 'Modalità da confermare';
 
       return <article className="course-card" key={course.id || course.slug}>
-        <div className={`course-art course-art-${theme}`}><img className="course-art-image" src={image} alt={imageAlt} loading="lazy" decoding="async" onError={event => { if (event.currentTarget.src !== fallbackImage) event.currentTarget.src = fallbackImage; }}/><span className="course-kind">{presentation?.kind || 'CORSO'}</span><span className="course-art-caption">{presentation?.label || 'Evocons Academy'}</span></div>
+        <div className={`course-art course-art-${theme}`}><img className="course-art-image" src={image} alt={imageAlt} loading="lazy" decoding="async" onError={event => { if (event.currentTarget.src !== fallbackImage) event.currentTarget.src = fallbackImage; }}/><span className={`course-kind ${isProfessional ? 'course-kind-professional' : ''}`}>
+  {categoryLabel}
+</span><span className="course-art-caption">{presentation?.label || 'Evocons Academy'}</span></div>
         <div className="course-body"><h3>{course.title}</h3><p>{course.description || 'Scopri il percorso formativo di Evocons Academy.'}</p><div className="course-meta">
   <span><Clock3 size={15}/>{durationLabel}</span>
   <span><MonitorPlay size={15}/>{formatLabel}</span>
@@ -375,7 +382,7 @@ function CoursePage(){
 } alt="Schermata di lavoro con analisi e documenti" loading="lazy"/></div>
       <div className="course-outcomes-copy"><p className="eyebrow">COMPETENZE IN USCITA</p><h2><EditorialTitle value={courseDetails?.outcomes_title} fallback={courseDetails.title}/></h2><p>{courseDetails?.outcomes_text || courseDetails.description}</p><div className="course-outcome-points">{(Array.isArray(courseDetails?.outcomes) && courseDetails.outcomes.length > 0 ? courseDetails.outcomes : (isPilotCourse ? fallbackOutcomes : [])).map((outcome, index) => { const Icon = [Sparkles, BookOpen, CheckCircle2][index % 3]; return <div key={outcome.id || index}><Icon/><strong>{outcome.title}</strong><span>{outcome.description}</span></div>; })}</div></div></div>
     </div></section>
-    {isMicroCourse && <section className="section course-next"><div className="container course-next-grid"><div><p className="eyebrow">PROSEGUIRE, SENZA VINCOLI</p><h2>Un micro-corso oggi.<br/><span>Un percorso domani.</span></h2><p>Ogni micro-corso è autonomo. Potrai scegliere altri moduli complementari oppure accedere all’intero percorso formativo con un investimento complessivo più conveniente.</p><p>Per chi prosegue dopo il primo modulo prevediamo agevolazioni dedicate, con condizioni e validità da definire.</p><a href={interestUrl} className="course-text-link">Manifesta interesse per il percorso <ArrowRight size={17}/></a></div><div className="course-path" aria-label="Modalità di prosecuzione"><div><span className="path-number">01</span><div><strong>Inizia con un micro-corso</strong><small>Un primo risultato concreto</small></div></div><div><span className="path-number">02</span><div><strong>Scegli i moduli complementari</strong><small>Approfondisci secondo i tuoi obiettivi</small></div></div><div><span className="path-number">03</span><div><strong>Oppure segui l’intero percorso</strong><small>Una proposta complessiva più conveniente</small></div></div></div></div></section>}
+    {isMicroCourse && <section className="section course-next"><div className="container course-next-grid"><div><p className="eyebrow">PROSEGUIRE, SENZA VINCOLI</p><h2>Un micro-corso oggi.<br/><span>Un percorso domani.</span></h2><p><strong>La formazione si adatta alla tua vita.</strong><br/>Cinque incontri online di due ore, pensati anche per chi lavora. Segui le lezioni da dove preferisci e utilizza il tempo tra un incontro e l'altro per approfondire, sperimentare e applicare ciò che hai imparato.</p><p><strong>Un piccolo investimento, nuove possibilità.</strong><br/>Ogni micro-corso è un'esperienza formativa autonoma, con obiettivi concreti e un investimento contenuto. Puoi acquisire competenze specifiche, scoprire nuovi interessi e capire quali ambiti desideri approfondire.</p><p>Puoi fermarti al primo risultato oppure proseguire, combinando più micro-corsi in un percorso di crescita professionale.</p><a href={interestUrl} className="course-text-link">Manifesta interesse per il percorso <ArrowRight size={17}/></a></div><div className="course-path" aria-label="Vantaggi dei micro-corsi"><div><span className="path-number">01</span><div><strong>Impara senza fermarti</strong><small>Due ore online, compatibili con il lavoro</small></div></div><div><span className="path-number">02</span><div><strong>Sperimenta tra gli incontri</strong><small>Tempo per approfondire e mettere in pratica</small></div></div><div><span className="path-number">03</span><div><strong>Scopri la tua direzione</strong><small>Nuove competenze, interessi e opportunità</small></div></div></div></div></section>}
     <section className="course-personal-section"><div className="container course-personal"><div><p className="eyebrow">FORMAZIONE SU MISURA</p><h2>Hai esigenze formative diverse?</h2><p>Un programma per il tuo team, un approfondimento specifico o un percorso personalizzato? Raccontaci cosa vuoi ottenere.</p></div><a href={contactUrl} className="button final-cta-button">Richiedi un percorso personalizzato <ArrowUpRight size={17}/></a></div></section>
   </main>;
 }
@@ -513,7 +520,7 @@ function PrivacyPage() {
     </div></section>
     <section className="interest-section"><div className="container">
       <article className="interest-panel" style={{maxWidth: 920, margin: '0 auto', lineHeight: 1.8}}>
-        <p><strong>Versione 1.0 — Bozza in fase di validazione (19 ottobre 2026).</strong></p>
+        <p><strong>Versione 1.1 — 30 ottobre 2026.</strong></p>
         <p>Questa informativa descrive il trattamento dei dati raccolti tramite il modulo di manifestazione d’interesse per i percorsi formativi di Evocons Academy.</p>
         <h2>1. Titolare del trattamento</h2>
         <p>EvoCons S.r.l.s.<br/>Via Nicola Coviello, 32 — 00165 Roma (RM)<br/>Email: <a href="mailto:privacy@evocons.it">privacy@evocons.it</a></p>
@@ -525,9 +532,9 @@ function PrivacyPage() {
         <h2>4. Conferimento dei dati</h2>
         <p>Nome, cognome e indirizzo email sono necessari per gestire la richiesta. Il telefono e il consenso marketing sono facoltativi. La mancata prestazione del consenso marketing non impedisce l’invio della richiesta.</p>
         <h2>5. Modalità e destinatari</h2>
-        <p>I dati sono trattati mediante strumenti informatici, con misure tecniche e organizzative appropriate. Le informazioni raccolte dal modulo sono archiviate su infrastruttura Hetzner presso il datacenter di Falkenstein, Germania. Possono accedervi persone autorizzate da EvoCons e fornitori coinvolti nell’erogazione dei servizi, nei limiti delle rispettive funzioni e degli accordi applicabili.</p>
+        <p>I dati sono trattati mediante strumenti informatici, con misure tecniche e organizzative appropriate. Le informazioni raccolte dal modulo sono archiviate su infrastruttura Hetzner presso il datacenter di Falkenstein, Germania. I dati delle manifestazioni d’interesse sono gestiti esclusivamente da EvoCons e non sono comunicati ad Accademia Informatica o ad altri partner formativi per loro autonome finalità commerciali. Possono accedervi persone autorizzate da EvoCons e fornitori tecnici che trattano dati per suo conto, nei limiti delle rispettive funzioni e degli accordi applicabili.</p>
         <h2>6. Conservazione</h2>
-        <p>Le manifestazioni d’interesse sono conservate per 24 mesi dall’ultima interazione significativa, salvo l’instaurazione di un rapporto contrattuale o ulteriori obblighi applicabili. Per finalità promozionali, il periodo previsto è di massimo 24 mesi dalla raccolta del consenso, salvo revoca anticipata. Le evidenze delle scelte privacy sono conservate per il periodo strettamente necessario a documentare il rispetto degli obblighi e tutelare i diritti coinvolti.</p>
+        <p>Le manifestazioni d’interesse sono conservate per un massimo di 24 mesi dall’ultima interazione significativa, salvo l’instaurazione di un rapporto contrattuale o ulteriori obblighi applicabili. EvoCons effettua controlli periodici sulle scadenze di conservazione. Alla scadenza del periodo applicabile, i dati sono sottoposti a cancellazione, salvo che sussista un diverso obbligo di conservazione. Per finalità promozionali, il periodo previsto è di massimo 24 mesi dalla raccolta del consenso, salvo revoca anticipata. Le evidenze delle scelte privacy sono conservate per il periodo strettamente necessario a documentare il rispetto degli obblighi e tutelare i diritti coinvolti.</p>
         <h2>7. Diritti degli interessati</h2>
         <p>Nei casi previsti dal GDPR, puoi richiedere accesso, rettifica, cancellazione, limitazione, portabilità e opposizione al trattamento. Puoi inoltre revocare il consenso promozionale. Per esercitare i tuoi diritti scrivi a <a href="mailto:privacy@evocons.it">privacy@evocons.it</a>. Puoi proporre reclamo al <a href="https://www.garanteprivacy.it/" target="_blank" rel="noopener noreferrer">Garante per la protezione dei dati personali</a>.</p>
         <h2>8. Decisioni automatizzate</h2>

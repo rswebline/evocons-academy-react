@@ -215,3 +215,31 @@
 .interest-success p{line-height:1.7;color:#50617d}
 @media(max-width:850px){.interest-grid{grid-template-columns:1fr;gap:30px}.interest-aside{padding-top:0}}
 @media(max-width:720px){.interest-intro{padding:30px 0 45px}.interest-intro h1{letter-spacing:-1.5px}.interest-intro p:last-child{font-size:16px}.interest-section{padding:38px 0 65px}.interest-panel{padding:27px 22px}.interest-form-row{grid-template-columns:1fr}}
+
+/* Course next — layout refinement, October 2026 */
+@media (min-width: 901px) {
+  .course-next-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.85fr);
+    gap: 48px;
+    align-items: center;
+  }
+  .course-next .course-next-grid h2 {
+    font-size: clamp(35px, 3.15vw, 46px);
+    line-height: 1.13;
+    letter-spacing: -1.5px;
+  }
+  .course-next .course-next-grid > div > p:not(.eyebrow) {
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  .course-next .course-path { padding: 22px 24px; }
+  .course-next .course-path strong { font-size: 17px; }
+  .course-next .course-path small { font-size: 13px; }
+}
+
+/* Distinzione visiva dei percorsi Academy */
+.course-kind-professional {
+  background: #173b78;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
