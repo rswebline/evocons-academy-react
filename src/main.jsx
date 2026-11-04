@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowRight, ArrowUpRight, BookOpen, ChartNoAxesCombined, GraduationCap, Menu, MonitorPlay, Sparkles, Users, X, Lightbulb, BriefcaseBusiness, Clock3, Code2, Workflow, Target, Laptop, MapPin, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BookOpen, ChartNoAxesCombined, GraduationCap, Menu, MonitorPlay, Sparkles, Users, X, Lightbulb, BriefcaseBusiness, Clock3, Code2, Workflow, Target, Laptop, MapPin, CheckCircle2, CalendarDays } from 'lucide-react';
 import './styles.css';
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/';
@@ -94,9 +94,38 @@ function WhyAcademy(){
   </div></section>
 }
 
+// Le date MySQL sono restituite come ISO UTC: formattarle in UTC evita slittamenti di giorno.
+function formatEditionDate(value, options = { day: 'numeric', month: 'long', year: 'numeric' }) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('it-IT', { ...options, timeZone: 'UTC' }).format(date);
+}
+
+function formatEditionTime(value) {
+  return typeof value === 'string' && /^\d{2}:\d{2}/.test(value) ? value.slice(0, 5) : '';
+}
+
+function publicEditions(items) {
+  const today = new Date().toISOString().slice(0, 10);
+  return (Array.isArray(items) ? items : [])
+    .filter(item => item && ['scheduled', 'confirmed'].includes(item.status)
+      && typeof item.start_date === 'string' && item.start_date.slice(0, 10) >= today)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date));
+}
+
+async function fetchEditions(slug, signal) {
+  const response = await fetch(`${API_BASE_URL}/academy/courses/${encodeURIComponent(slug)}/editions`, { signal });
+  if (!response.ok) throw new Error('Edizioni non disponibili');
+  const payload = await response.json();
+  if (!Array.isArray(payload.data)) throw new Error('Formato edizioni non valido');
+  return publicEditions(payload.data);
+}
+
 function Courses(){
   const [publishedCourses, setPublishedCourses] = React.useState([]);
   const [catalogStatus, setCatalogStatus] = React.useState('loading');
+  const [editionsBySlug, setEditionsBySlug] = React.useState({});
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -106,8 +135,18 @@ function Courses(){
         if (!response.ok) throw new Error('Catalogo non disponibile');
         const payload = await response.json();
         if (!Array.isArray(payload.data)) throw new Error('Formato catalogo non valido');
-        setPublishedCourses(payload.data.filter(course => course && typeof course.slug === 'string' && typeof course.title === 'string'));
+        const validCourses = payload.data.filter(course => course && typeof course.slug === 'string' && typeof course.title === 'string');
+        setPublishedCourses(validCourses);
         setCatalogStatus('ready');
+        // Un errore sul calendario di un corso non deve rendere indisponibile il catalogo.
+        const results = await Promise.allSettled(validCourses.map(course => fetchEditions(course.slug, controller.signal)));
+        if (!controller.signal.aborted) {
+          const next = {};
+          results.forEach((result, index) => {
+            if (result.status === 'fulfilled') next[validCourses[index].slug] = result.value;
+          });
+          setEditionsBySlug(next);
+        }
       } catch (error) {
         if (error.name !== 'AbortError') setCatalogStatus('error');
       }
@@ -157,10 +196,11 @@ const formatLabel =
   <span><Clock3 size={15}/>{durationLabel}</span>
   <span><MonitorPlay size={15}/>{formatLabel}</span>
 </div>
-<a className="course-status course-link" href={detailAvailable ? `/corsi/${encodeURIComponent(course.slug)}/` : contactUrl}>{detailAvailable ? 'Scopri il corso →' : 'Richiedi informazioni →'}</a></div>
+{editionsBySlug[course.slug]?.length > 0 && <div className="course-edition-dates"><strong>Prossime edizioni</strong>{editionsBySlug[course.slug].map(edition => <span key={edition.id || edition.edition_code}><CalendarDays size={15} aria-hidden="true"/>{formatEditionDate(edition.start_date)}</span>)}</div>}
+ <a className="course-status course-link" href={detailAvailable ? `/corsi/${encodeURIComponent(course.slug)}/` : contactUrl}>{detailAvailable ? 'Scopri il corso →' : 'Richiedi informazioni →'}</a></div>
       </article>;
     })}</div>}
-    <p className="course-disclaimer">I micro-corsi si possono seguire singolarmente oppure come percorso completo a condizioni agevolate. Prezzi, calendari e iscrizioni saranno comunicati successivamente.</p>
+    <p className="course-disclaimer">I micro-corsi si possono seguire singolarmente oppure come percorso completo a condizioni agevolate. Consulta la pagina di ciascun corso per conoscere le prossime edizioni e le modalità di partecipazione.</p>
   </div></section>;
 }
 
@@ -259,6 +299,8 @@ function CoursePage(){
   const [courseDetails, setCourseDetails] = React.useState(null);
   const [detailStatus, setDetailStatus] = React.useState('loading');
   const [modulesStatus, setModulesStatus] = React.useState('loading');
+  const [courseEditions, setCourseEditions] = React.useState([]);
+  const [editionsStatus, setEditionsStatus] = React.useState('loading');
   const totalHours = Number(courseDetails?.duration_hours);
   const hoursLabel = Number.isFinite(totalHours) && totalHours > 0 ? `${totalHours.toLocaleString('it-IT')} ore` : 'Durata da definire';
   const moduleCount = courseModules.length;
@@ -310,6 +352,14 @@ function CoursePage(){
   }, []);
 
   React.useEffect(() => {
+    const controller = new AbortController();
+    fetchEditions(courseSlug, controller.signal)
+      .then(items => { if (!controller.signal.aborted) { setCourseEditions(items); setEditionsStatus('ready'); } })
+      .catch(error => { if (!controller.signal.aborted) { console.warn('Edizioni non disponibili.', error); setEditionsStatus('error'); } });
+    return () => controller.abort();
+  }, []);
+
+  React.useEffect(() => {
     if (detailStatus !== 'ready' || !courseDetails) return;
     const title = `${courseDetails.title} | Evocons Academy`;
     const description = courseDetails.hero_description || courseDetails.description || `Scopri il corso ${courseDetails.title} di Evocons Academy.`;
@@ -340,8 +390,8 @@ function CoursePage(){
         <h1><EditorialTitle value={courseDetails?.hero_title} fallback={courseDetails.title}/></h1>
         <p className="course-hero-lead">{courseDetails?.hero_description || courseDetails.description}</p>
         <div className="course-facts"><span><MonitorPlay size={18}/> Online live</span><span><Clock3 size={18}/> {hoursLabel}{moduleCount ? ` · ${moduleCount} moduli` : ""}</span>{isPilotCourse && <span><Users size={18}/> Nessun prerequisito tecnico</span>}</div>
-        <div className="course-hero-actions"><a href="#programma" className="button button-primary">Esplora il programma <ArrowRight size={17}/></a><a href={interestUrl} className="button button-outline">Manifesta interesse <ArrowUpRight size={17}/></a></div>
-        <p className="course-note">Calendario, quota e iscrizioni saranno comunicati successivamente.</p>
+        <div className="course-hero-actions"><a href="#calendario" className="button button-primary">Prossime edizioni <ArrowRight size={17}/></a><a href={interestUrl} className="button button-outline">Manifesta interesse <ArrowUpRight size={17}/></a></div>
+        <p className="course-note">Le prossime edizioni e le relative quote sono riportate nella sezione Calendario e quote.</p>
       </div>
       <div className="course-hero-image"><img 
       src={
@@ -357,6 +407,30 @@ function CoursePage(){
     ? `${API_BASE_URL}/academy/courses/${encodeURIComponent(courseDetails.slug)}/overview-image`
     : "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1100&q=85"
 } alt="Persone che collaborano utilizzando strumenti digitali" loading="lazy"/><div className="course-overview-bubble"><MonitorPlay size={20}/> Non videolezioni registrate: partecipi in diretta.</div></div></div></section>
+    <section id="calendario" className="section course-editions" aria-labelledby="course-editions-title"><div className="container">
+      <div className="course-editions-heading"><p className="eyebrow">CALENDARIO E QUOTE</p><h2 id="course-editions-title">Le prossime edizioni.</h2><p>Confronta le date e scegli il periodo più adatto alle tue esigenze.</p></div>
+      {editionsStatus === 'loading' && <p role="status">Caricamento del calendario…</p>}
+      {editionsStatus === 'error' && <p role="alert">Il calendario non è momentaneamente disponibile. Puoi comunque manifestare interesse per il corso.</p>}
+      {editionsStatus === 'ready' && courseEditions.length === 0 && <p>Non ci sono edizioni programmate al momento. Puoi manifestare interesse per ricevere informazioni sulle prossime partenze.</p>}
+      {editionsStatus === 'ready' && courseEditions.length > 0 && <div className="course-editions-grid">{courseEditions.map(edition => {
+        const start = formatEditionDate(edition.start_date);
+        const end = formatEditionDate(edition.end_date);
+        const timeFrom = formatEditionTime(edition.start_time);
+        const timeTo = formatEditionTime(edition.end_time);
+        const price = Number(edition.list_price);
+        const hasPrice = edition.list_price !== null && edition.list_price !== undefined && edition.list_price !== '' && Number.isFinite(price);
+        return <article className="course-edition-card" key={edition.id || edition.edition_code}>
+          <div className="course-edition-top"><h3>{start}{end ? ` – ${end}` : ''}</h3><span className={`course-edition-status ${edition.status === 'confirmed' ? 'is-confirmed' : ''}`}>{edition.status === 'confirmed' ? 'Partenza confermata' : 'Programmata'}</span></div>
+          <div className="course-edition-facts">
+            {edition.calendar_name && <span><CalendarDays size={19}/>{edition.calendar_name}{timeFrom && timeTo ? ` · ${timeFrom}–${timeTo}` : ''}</span>}
+            {edition.delivery_mode && <span><MonitorPlay size={19}/>{({ online_live: 'Online in diretta', in_person: 'In presenza', hybrid: 'Modalità ibrida' })[edition.delivery_mode] || edition.delivery_mode}</span>}
+            {edition.frequency === 'weekly' && <span><Clock3 size={19}/>Frequenza settimanale</span>}
+          </div>
+          <div className="course-edition-bottom"><div><small>Quota di partecipazione</small><strong>{hasPrice ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(price) : 'Da definire'}</strong></div><a href={`${interestUrl}&edizione=${encodeURIComponent(edition.id)}`} className="button button-primary">Manifesta interesse <ArrowRight size={17}/></a></div>
+        </article>;
+      })}</div>}
+      <p className="course-editions-note">La manifestazione d'interesse non costituisce iscrizione né prenotazione del posto. Le edizioni programmate sono soggette a conferma.</p>
+    </div></section>
     <section id="programma" className="section course-program"><div className="container">
       <div className="course-section-heading"><div><p className="eyebrow">IL PROGRAMMA</p><h2>{isPilotCourse ? <>Cinque incontri.<br/><span>Cinque passi avanti.</span></> : <>Il programma.<br/><span>Le competenze da sviluppare.</span></>}</h2></div><p>{isPilotCourse ? "10 ore in diretta. Ogni incontro parte da un'esigenza concreta e termina con un'esercitazione." : `Scopri i contenuti e le attività previste nel percorso${moduleCount ? `, articolato in ${moduleCount} moduli` : ''}.`}</p></div>
       <div className="course-module-editorial">{modulesStatus === "error" && !isPilotCourse && <p role="alert">Il programma non è momentaneamente disponibile.</p>}{courseModules.map((m,i)=><article className="course-module-feature" key={m.id || m.title}>
@@ -409,6 +483,9 @@ const PRIVACY_VERSION = import.meta.env.VITE_ACADEMY_PRIVACY_VERSION || '';
 
 function InterestPage() {
   const slug = new URLSearchParams(window.location.search).get('corso');
+  const editionId = new URLSearchParams(window.location.search).get('edizione');
+  const [selectedEdition, setSelectedEdition] = React.useState(null);
+  const [editionStatus, setEditionStatus] = React.useState(editionId ? 'loading' : 'generic');
   const [course, setCourse] = React.useState(null);
   const [courseStatus, setCourseStatus] = React.useState('loading');
   React.useEffect(() => {
@@ -429,10 +506,31 @@ function InterestPage() {
     loadCourse();
     return () => controller.abort();
   }, [slug]);
+  React.useEffect(() => {
+    if (!editionId) return;
+    const controller = new AbortController();
+    if (!slug || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(editionId)) {
+      setEditionStatus('error');
+      return;
+    }
+    fetchEditions(slug, controller.signal)
+      .then(editions => {
+        if (controller.signal.aborted) return;
+        const match = editions.find(item => item.id === editionId);
+        setSelectedEdition(match || null);
+        setEditionStatus(match ? 'ready' : 'error');
+      })
+      .catch(error => {
+        if (controller.signal.aborted) return;
+        console.warn('Impossibile verificare l’edizione.', error);
+        setEditionStatus('error');
+      });
+    return () => controller.abort();
+  }, [slug, editionId]);
   const [values, setValues] = React.useState({ first_name: '', last_name: '', email: '', phone: '', acknowledged: false, marketing: false });
   const [status, setStatus] = React.useState('idle');
   const [error, setError] = React.useState('');
-  const ready = ENROLLMENT_ENABLED && Boolean(PRIVACY_URL && PRIVACY_VERSION) && courseStatus === 'ready';
+  const ready = ENROLLMENT_ENABLED && Boolean(PRIVACY_URL && PRIVACY_VERSION) && courseStatus === 'ready' && (editionStatus === 'generic' || editionStatus === 'ready');
 
   React.useEffect(() => {
     document.title = 'Manifestazione d’interesse | Evocons Academy';
@@ -457,15 +555,22 @@ function InterestPage() {
           email: values.email.trim(),
           phone: values.phone.trim(),
           course_slug: course.slug,
+          ...(selectedEdition ? { edition_id: selectedEdition.id } : {}),
           privacy_notice_version: PRIVACY_VERSION,
           privacy_notice_acknowledged: values.acknowledged,
           marketing_consent: values.marketing
         })
       });
-      if (!response.ok) throw new Error('Invio non riuscito');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        if (payload?.code === 'EDITION_NOT_AVAILABLE') {
+          throw new Error('L’edizione selezionata non è più disponibile. Torna al calendario e scegli un’altra data.');
+        }
+        throw new Error('Non è stato possibile inviare la richiesta. Riprova più tardi.');
+      }
       setStatus('success');
-    } catch {
-      setError('Non è stato possibile inviare la richiesta. Riprova più tardi.');
+    } catch (error) {
+      setError(error.message || 'Non è stato possibile inviare la richiesta. Riprova più tardi.');
       setStatus('error');
     }
   }
@@ -491,12 +596,22 @@ function InterestPage() {
           <h2>{course ? course.title : 'Percorso non disponibile'}</h2>
           <p>{course ? (course.hero_description || course.description || 'Scopri questo percorso formativo.') : (courseStatus === 'loading' ? 'Caricamento del percorso…' : 'Il collegamento non identifica un corso disponibile. Torna al catalogo e scegli un percorso.')}</p>
           {course && <div className="interest-facts"><span><Clock3 size={18}/> {Number(course.duration_hours) > 0 ? `${Number(course.duration_hours).toLocaleString("it-IT")} ore` : "Durata da definire"}</span><span><MonitorPlay size={18}/> {course.delivery_mode === "online_live" ? "Online in diretta" : "Modalità da confermare"}</span></div>}
+          {editionId && editionStatus === 'loading' && <p className="interest-edition" role="status">Verifica dell’edizione selezionata…</p>}
+          {editionId && editionStatus === 'error' && <p className="interest-edition-error" role="alert">L’edizione indicata non è disponibile. Torna al calendario del corso per selezionarne un’altra.</p>}
+          {selectedEdition && editionStatus === 'ready' && <div className="interest-edition">
+            <strong>Edizione selezionata</strong>
+            <span>{formatEditionDate(selectedEdition.start_date)}{selectedEdition.end_date ? ` – ${formatEditionDate(selectedEdition.end_date)}` : ''}</span>
+            {selectedEdition.calendar_name && <span>{selectedEdition.calendar_name}{selectedEdition.start_time && selectedEdition.end_time ? ` · ${formatEditionTime(selectedEdition.start_time)}–${formatEditionTime(selectedEdition.end_time)}` : ''}</span>}
+            <span>{selectedEdition.status === 'confirmed' ? 'Partenza confermata' : 'Programmata · soggetta a conferma'}</span>
+            <a href={`/corsi/${encodeURIComponent(slug)}/#calendario`}>Cambia edizione</a>
+          </div>}
           <a href={course ? `/corsi/${encodeURIComponent(course.slug)}/` : '/#corsi'} className="course-text-link">Consulta il programma <ArrowRight size={17}/></a>
         </aside>
         <div className="interest-panel">
           {status === 'success' ? <div className="interest-success" role="status"><CheckCircle2 size={38}/><h2>Richiesta ricevuta</h2><p>Grazie per l'interesse. Ti contatteremo per fornirti maggiori informazioni.</p><a href="/" className="button button-primary">Torna ad Academy <ArrowRight size={17}/></a></div> : <>
             <h2>Parliamo del tuo percorso.</h2>
-            {import.meta.env.MODE === 'test' && <p className="interest-notice" role="status">AMBIENTE DI TEST · I dati inseriti saranno registrati nel database di prova. Utilizza esclusivamente dati fittizi.</p>}
+            {selectedEdition && editionStatus === 'ready' && <p className="interest-panel-lead"><strong>Edizione del {formatEditionDate(selectedEdition.start_date)}</strong> · La richiesta sarà associata a questa edizione.</p>}
+            {import.meta.env.MODE === 'test' && <p className="interest-notice" role="status">AMBIENTE DI TEST · Verifica la destinazione API prima di utilizzare dati reali.</p>}
             <p className="interest-panel-lead">Lascia i tuoi riferimenti per ricevere informazioni. I campi contrassegnati con * sono obbligatori.</p>
             <form onSubmit={submit} className="interest-form">
               <div className="interest-form-row">
@@ -509,6 +624,7 @@ function InterestPage() {
                 <label className="interest-check"><input type="checkbox" required checked={values.acknowledged} onChange={e => update('acknowledged', e.target.checked)} /><span>Confermo di aver preso visione dell’<a href={PRIVACY_URL || undefined} onClick={e => { if (!PRIVACY_URL) e.preventDefault(); }} target="_blank" rel="noopener noreferrer">informativa sul trattamento dei dati personali</a>. *</span></label>
                 <label className="interest-check"><input type="checkbox" checked={values.marketing} onChange={e => update('marketing', e.target.checked)} /><span>Acconsento a ricevere comunicazioni promozionali relative alle iniziative formative di Evocons Academy. (Facoltativo)</span></label>
               </div>
+              {editionId && editionStatus === 'error' && <p className="interest-error" role="alert">Invio disabilitato: edizione non disponibile.</p>}
               {!ENROLLMENT_ENABLED || !PRIVACY_URL || !PRIVACY_VERSION ? <p className="interest-notice" role="status">Modulo in preparazione.</p> : null}
               {error && <p className="interest-error" role="alert">{error}</p>}
               <button type="submit" className="button button-primary interest-submit" disabled={!ready || !course || status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Invia manifestazione d’interesse'} <ArrowRight size={17}/></button>
