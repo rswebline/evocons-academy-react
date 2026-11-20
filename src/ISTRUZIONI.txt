@@ -1,0 +1,13 @@
+TEST LOCALE React -> Directus -> MySQL
+
+1) Copia main.jsx e styles.css in src/.
+2) Copia vite.config.test.mjs e .env.test nella radice del progetto (accanto a package.json).
+3) Copia privacy-test.html in public/ (crea public/ se manca).
+4) Terminale 1: ssh -N -L 18055:127.0.0.1:8055 evocons
+   Lascia la sessione aperta. Il tunnel mantiene l'API pubblica bloccata.
+5) Terminale 2: npm run dev -- --mode test --config vite.config.test.mjs
+6) Apri /manifestazione-interesse?corso=ai-per-il-lavoro sull'URL locale Vite.
+7) Compila solo con dati FINTIZI e premi Invia manifestazione d'interesse.
+8) Verifica in Directus > Course Interests che sia apparso un nuovo record.
+
+IMPORTANTE: test-v1 e privacy-test.html non sono informativa GDPR valida. Non pubblicare i file di test, non eseguire build/deploy in mode test. L'endpoint Nginx pubblico rimane bloccato.
