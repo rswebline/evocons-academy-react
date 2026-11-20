@@ -287,3 +287,10 @@
 .interest-edition strong{color:#092755}
 .interest-edition a{font-weight:700;color:#2458f5}
 .interest-edition-error{padding:16px;border:1px solid #e9b7b7;border-radius:12px;background:#fff6f6;color:#8b2626;line-height:1.6}
+
+/* Categoria Master nel catalogo Academy */
+.course-kind-master {
+  background: #102b53;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.35);
+}

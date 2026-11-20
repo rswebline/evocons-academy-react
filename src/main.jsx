@@ -3,13 +3,69 @@ import { createRoot } from 'react-dom/client';
 import { ArrowRight, ArrowUpRight, BookOpen, ChartNoAxesCombined, GraduationCap, Menu, MonitorPlay, Sparkles, Users, X, Lightbulb, BriefcaseBusiness, Clock3, Code2, Workflow, Target, Laptop, MapPin, CheckCircle2, CalendarDays } from 'lucide-react';
 import './styles.css';
 
+const UTM_FIELDS = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_content',
+  'utm_term'
+];
+
+const UTM_MAX_LENGTHS = {
+  utm_source: 100,
+  utm_medium: 100,
+  utm_campaign: 150,
+  utm_content: 150,
+  utm_term: 150
+};
+
+function getUtmParameters() {
+  const params = new URLSearchParams(window.location.search);
+  const attribution = {};
+
+  for (const field of UTM_FIELDS) {
+    const value = params.get(field)?.trim();
+
+    if (value && value.length <= UTM_MAX_LENGTHS[field]) {
+      attribution[field] = value;
+    }
+  }
+
+  return attribution;
+}
+
+function withUtm(url) {
+  const attribution = getUtmParameters();
+
+  if (Object.keys(attribution).length === 0) {
+    return url;
+  }
+
+  const target = new URL(url, window.location.origin);
+
+  if (target.origin !== window.location.origin) {
+    return url;
+  }
+
+  for (const [field, value] of Object.entries(attribution)) {
+    target.searchParams.set(field, value);
+  }
+
+  return target.pathname + target.search + target.hash;
+}
+
+
+
+
 const pathname = window.location.pathname.replace(/\/$/, '') || '/';
 const courseSlug = pathname.match(/^\/corsi\/([a-z0-9-]+)$/)?.[1] ?? null;
 const isCoursePage = courseSlug !== null;
 const isInterestPage = pathname === '/manifestazione-interesse';
 const isPrivacyPage = pathname === '/privacy';
 const isInnerPage = isCoursePage || isInterestPage || isPrivacyPage;
-const interestUrl = courseSlug ? `/manifestazione-interesse?corso=${encodeURIComponent(courseSlug)}` : '/#corsi';
+const interestUrl = courseSlug
+  ? withUtm(`/manifestazione-interesse?corso=${encodeURIComponent(courseSlug)}`)
+  : '/#corsi';
 const contactUrl = 'https://www.evocons.it/contatti';
 
 function Header() {
@@ -17,16 +73,16 @@ function Header() {
   return (
     <header className="site-header">
       <div className="header-inner container">
-        <a href={isInnerPage ? "/" : "#home"} className="brand" aria-label="Evocons Academy - homepage">
+        <a href={isInnerPage ? withUtm("/") : "#home"} className="brand" aria-label="Evocons Academy - homepage">
           <span className="brand-mark" aria-hidden="true">e</span><span className="brand-name">evocons</span><span className="brand-divider"/><span className="brand-academy">academy</span>
         </a>
         <nav id="main-navigation" className={`main-nav ${open ? 'is-open' : ''}`} aria-label="Navigazione principale">
-          <a href={isInnerPage ? "/#corsi" : "#corsi"} onClick={() => setOpen(false)}>Corsi</a>
-          <a href={isInnerPage ? "/#perche-academy" : "#perche-academy"} onClick={() => setOpen(false)}>Perché Academy</a>
-          <a href={isInnerPage ? "/#destinatari" : "#destinatari"} onClick={() => setOpen(false)}>A chi si rivolge</a>
-          <a href={isInnerPage ? "/#metodo" : "#metodo"} onClick={() => setOpen(false)}>Come funziona</a>
+          <a href={isInnerPage ? withUtm("/#corsi") : "#corsi"} onClick={() => setOpen(false)}>Corsi</a>
+          <a href={isInnerPage ? withUtm("/#perche-academy") : "#perche-academy"} onClick={() => setOpen(false)}>Perché Academy</a>
+          <a href={isInnerPage ? withUtm("/#destinatari") : "#destinatari"} onClick={() => setOpen(false)}>A chi si rivolge</a>
+          <a href={isInnerPage ? withUtm("/#metodo") : "#metodo"} onClick={() => setOpen(false)}>Come funziona</a>
         </nav>
-        <a className="button button-primary header-cta" href={isInnerPage ? "/#corsi" : "#corsi"}>Scopri i percorsi <ArrowRight size={17}/></a>
+        <a className="button button-primary header-cta" href={isInnerPage ? withUtm("/#corsi") : "#corsi"}>Scopri i percorsi <ArrowRight size={17}/></a>
         <button className="mobile-menu-toggle" aria-expanded={open} aria-controls="main-navigation" aria-label={open ? 'Chiudi menu' : 'Apri menu'} onClick={() => setOpen(!open)}>{open ? <X/> : <Menu/>}</button>
       </div>
     </header>
@@ -122,6 +178,14 @@ async function fetchEditions(slug, signal) {
   return publicEditions(payload.data);
 }
 
+const COURSE_CATEGORY_LABELS = {
+  base: 'CORSO BASE',
+  professional: 'PROFESSIONAL',
+  master: 'MASTER',
+  'micro-course': 'CORSO BASE', // Compatibilità durante l'aggiornamento Directus
+  specialization: 'PROFESSIONAL' // Compatibilità durante l'aggiornamento Directus
+};
+
 function Courses(){
   const [publishedCourses, setPublishedCourses] = React.useState([]);
   const [catalogStatus, setCatalogStatus] = React.useState('loading');
@@ -156,17 +220,15 @@ function Courses(){
   }, []);
 
   return <section id="corsi" className="section courses-section" aria-labelledby="courses-title"><div className="container">
-    <div className="section-heading"><div><p className="eyebrow">I PERCORSI</p><h2 id="courses-title">Trova il percorso giusto per te.</h2><p>Dal primo utilizzo dell'AI alla specializzazione tecnica.</p></div><span className="section-hint">Micro-corsi e percorsi Professional</span></div>
+    <div className="section-heading"><div><p className="eyebrow">I PERCORSI</p><h2 id="courses-title">Trova il percorso giusto per te.</h2><p>Dal primo utilizzo dell'AI alla specializzazione tecnica.</p></div><span className="section-hint">Corsi Base, Professional e Master</span></div>
     {catalogStatus === 'loading' && <p role="status">Caricamento dei corsi in corso…</p>}
     {catalogStatus === 'error' && <p role="alert">Il catalogo non è momentaneamente disponibile. Riprova più tardi.</p>}
     {catalogStatus === 'ready' && publishedCourses.length === 0 && <p>Al momento non ci sono corsi pubblicati.</p>}
     {catalogStatus === 'ready' && publishedCourses.length > 0 && <div className="course-grid">{publishedCourses.map(course => {
-      const isProfessional = course.category === 'specialization';
+      const isProfessional = ['professional', 'specialization'].includes(course.category);
+      const isMaster = course.category === 'master';
       const presentation = courses.find(item => item.slug === course.slug);
-const categoryLabel =
-  isProfessional ? 'PROFESSIONAL' :
-  course.category === 'micro-course' ? 'MICRO-CORSO' :
-  'CORSO';
+const categoryLabel = COURSE_CATEGORY_LABELS[course.category] || 'CORSO';
       const theme = presentation?.theme || 'work';
       const fallbackImage = presentation?.image || 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=960&q=85';
       const image = course.image ? `${API_BASE_URL}/academy/courses/${encodeURIComponent(course.slug)}/image` : fallbackImage;
@@ -189,7 +251,7 @@ const formatLabel =
   deliveryLabels[course.delivery_mode] || 'Modalità da confermare';
 
       return <article className="course-card" key={course.id || course.slug}>
-        <div className={`course-art course-art-${theme}`}><img className="course-art-image" src={image} alt={imageAlt} loading="lazy" decoding="async" onError={event => { if (event.currentTarget.src !== fallbackImage) event.currentTarget.src = fallbackImage; }}/><span className={`course-kind ${isProfessional ? 'course-kind-professional' : ''}`}>
+        <div className={`course-art course-art-${theme}`}><img className="course-art-image" src={image} alt={imageAlt} loading="lazy" decoding="async" onError={event => { if (event.currentTarget.src !== fallbackImage) event.currentTarget.src = fallbackImage; }}/><span className={`course-kind ${isProfessional ? 'course-kind-professional' : isMaster ? 'course-kind-master' : ''}`}>
   {categoryLabel}
 </span><span className="course-art-caption">{presentation?.label || 'Evocons Academy'}</span></div>
         <div className="course-body"><h3>{course.title}</h3><p>{course.description || 'Scopri il percorso formativo di Evocons Academy.'}</p><div className="course-meta">
@@ -197,15 +259,15 @@ const formatLabel =
   <span><MonitorPlay size={15}/>{formatLabel}</span>
 </div>
 {editionsBySlug[course.slug]?.length > 0 && <div className="course-edition-dates"><strong>Prossime edizioni</strong>{editionsBySlug[course.slug].map(edition => <span key={edition.id || edition.edition_code}><CalendarDays size={15} aria-hidden="true"/>{formatEditionDate(edition.start_date)}</span>)}</div>}
- <a className="course-status course-link" href={detailAvailable ? `/corsi/${encodeURIComponent(course.slug)}/` : contactUrl}>{detailAvailable ? 'Scopri il corso →' : 'Richiedi informazioni →'}</a></div>
+ <a className="course-status course-link" href={detailAvailable ? withUtm(`/corsi/${encodeURIComponent(course.slug)}/`) : contactUrl}>{detailAvailable ? 'Scopri il corso →' : 'Richiedi informazioni →'}</a></div>
       </article>;
     })}</div>}
-    <p className="course-disclaimer">I micro-corsi si possono seguire singolarmente oppure come percorso completo a condizioni agevolate. Consulta la pagina di ciascun corso per conoscere le prossime edizioni e le modalità di partecipazione.</p>
+    <p className="course-disclaimer">Consulta la pagina di ciascun corso per conoscere programma, durata, prossime edizioni e modalità di partecipazione.</p>
   </div></section>;
 }
 
 function Audience(){
-  return <section id="destinatari" className="section audience-section" aria-labelledby="audience-title"><div className="container audience-grid"><div><p className="eyebrow">A CHI CI RIVOLGIAMO</p><h2 id="audience-title">La formazione parte da te.<br/><span>Non dal tuo titolo.</span></h2><p>Che tu voglia migliorare nel lavoro, cambiare direzione o esplorare nuove competenze, puoi individuare un percorso coerente con il tuo punto di partenza.</p><a href="#corsi" className="button audience-button">Esplora i percorsi <ArrowRight size={17}/></a></div><div className="audience-cards">
+  return <section id="destinatari" className="section audience-section" aria-labelledby="audience-title"><div className="container audience-grid"><div><p className="eyebrow">A CHI CI RIVOLGIAMO</p><h2 id="audience-title">La formazione parte da te.<br/><span>Non dal tuo titolo.</span></h2><p>Che tu voglia migliorare nel lavoro, cambiare direzione o esplorare nuove competenze, puoi individuare un percorso coerente con il tuo punto di partenza.</p><a href={withUtm("#corsi")} className="button audience-button">Esplora i percorsi <ArrowRight size={17}/></a></div><div className="audience-cards">
     <div><BriefcaseBusiness/><h3>Professionisti</h3><p>Aggiorna competenze e strumenti.</p></div><div><GraduationCap/><h3>Studenti</h3><p>Avvicinati alle tecnologie emergenti.</p></div><div><Laptop/><h3>Freelance</h3><p>Amplia i servizi che puoi offrire.</p></div><div><Lightbulb/><h3>Appassionati</h3><p>Trasforma la curiosità in pratica.</p></div>
   </div></div></section>
 }
@@ -225,7 +287,7 @@ function Footer() {
     <footer className="academy-footer" aria-label="Informazioni Evocons Academy">
       <div className="container footer-top">
         <div className="footer-intro">
-          <a href={isInnerPage ? "/" : "#home"} className="brand footer-brand" aria-label="Evocons Academy - torna all’inizio">
+          <a href={isInnerPage ? withUtm("/") : "#home"} className="brand footer-brand" aria-label="Evocons Academy - torna all’inizio">
             <span className="brand-mark" aria-hidden="true">e</span><span className="brand-name">evocons</span><span className="brand-divider"/><span className="brand-academy">academy</span>
           </a>
           <p>Competenze concrete per nuove opportunità. Formazione pratica, con persone vere e obiettivi reali.</p>
@@ -233,27 +295,27 @@ function Footer() {
         </div>
         <div className="footer-links">
           <h2>Esplora Academy</h2>
-          <a href={isInnerPage ? "/#corsi" : "#corsi"}>I percorsi</a>
-          <a href={isInnerPage ? "/#perche-academy" : "#perche-academy"}>Perché Academy</a>
-          <a href={isInnerPage ? "/#destinatari" : "#destinatari"}>A chi si rivolge</a>
-          <a href={isInnerPage ? "/#metodo" : "#metodo"}>Come funziona</a>
+          <a href={isInnerPage ? withUtm("/#corsi") : "#corsi"}>I percorsi</a>
+          <a href={isInnerPage ? withUtm("/#perche-academy") : "#perche-academy"}>Perché Academy</a>
+          <a href={isInnerPage ? withUtm("/#destinatari") : "#destinatari"}>A chi si rivolge</a>
+          <a href={isInnerPage ? withUtm("/#metodo") : "#metodo"}>Come funziona</a>
         </div>
         <div className="footer-links">
           <h2>La formazione</h2>
           <p><MonitorPlay size={17}/> Online in diretta</p>
           <p><Users size={17}/> Interazione con il docente</p>
-          <p><GraduationCap size={17}/> Corsi brevi e master</p>
+          <p><GraduationCap size={17}/> Corsi Base, Professional e Master</p>
         </div>
         <div className="footer-contact">
           <h2>Costruiamo il tuo prossimo passo.</h2>
           <p>Scopri il percorso più adatto ai tuoi obiettivi.</p>
-          <a href={isInnerPage ? "/#corsi" : "#corsi"} className="button footer-button">Esplora i corsi <ArrowRight size={18}/></a>
+          <a href={isInnerPage ? withUtm("/#corsi") : "#corsi"} className="button footer-button">Esplora i corsi <ArrowRight size={18}/></a>
         </div>
       </div>
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} Evocons Academy · Un progetto Evocons</span>
-        <a href="/privacy">Privacy</a>
-        <a href="https://www.evocons.it/contatti" target="_blank" rel="noopener noreferrer">Contatti <ArrowUpRight size={14}/></a>
+        <a href={withUtm('/privacy')}>Privacy</a>
+        <a href={withUtm('https://www.evocons.it/contatti')} target="_blank" rel="noopener noreferrer">Contatti <ArrowUpRight size={14}/></a>
       </div>
     </footer>
   );
@@ -304,7 +366,8 @@ function CoursePage(){
   const totalHours = Number(courseDetails?.duration_hours);
   const hoursLabel = Number.isFinite(totalHours) && totalHours > 0 ? `${totalHours.toLocaleString('it-IT')} ore` : 'Durata da definire';
   const moduleCount = courseModules.length;
-  const isMicroCourse = courseDetails?.category === 'micro-course';
+  const isBaseCourse = ['base', 'micro-course'].includes(courseDetails?.category);
+  const detailCategoryLabel = COURSE_CATEGORY_LABELS[courseDetails?.category] || 'EVOCONS ACADEMY';
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -382,11 +445,11 @@ function CoursePage(){
     return <main className="course-page"><section className="section"><div className="container"><p role="status">Caricamento del corso…</p></div></section></main>;
   }
   if (detailStatus === 'error') {
-    return <main className="course-page"><section className="section"><div className="container"><h1>Corso non disponibile</h1><p>Non è possibile visualizzare questo corso. Torna al catalogo per consultare i percorsi pubblicati.</p><a href="/#corsi" className="button button-primary">Torna ai corsi <ArrowRight size={17}/></a></div></section></main>;
+    return <main className="course-page"><section className="section"><div className="container"><h1>Corso non disponibile</h1><p>Non è possibile visualizzare questo corso. Torna al catalogo per consultare i percorsi pubblicati.</p><a href={withUtm('/#corsi')} className="button button-primary">Torna ai corsi <ArrowRight size={17}/></a></div></section></main>;
   }
   return <main className="course-page" id="home">
     <section className="course-hero"><div className="container course-hero-grid">
-      <div><a className="course-back" href="/#corsi">← Tutti i percorsi</a><p className="eyebrow">{isMicroCourse ? "MICRO-CORSO" : "EVOCONS ACADEMY"} · {courseDetails.title.toLocaleUpperCase("it-IT")}</p>
+      <div><a className="course-back" href={withUtm('/#corsi')}>← Tutti i percorsi</a><p className="eyebrow">{detailCategoryLabel} · {courseDetails.title.toLocaleUpperCase("it-IT")}</p>
         <h1><EditorialTitle value={courseDetails?.hero_title} fallback={courseDetails.title}/></h1>
         <p className="course-hero-lead">{courseDetails?.hero_description || courseDetails.description}</p>
         <div className="course-facts"><span><MonitorPlay size={18}/> Online live</span><span><Clock3 size={18}/> {hoursLabel}{moduleCount ? ` · ${moduleCount} moduli` : ""}</span>{isPilotCourse && <span><Users size={18}/> Nessun prerequisito tecnico</span>}</div>
@@ -426,7 +489,7 @@ function CoursePage(){
             {edition.delivery_mode && <span><MonitorPlay size={19}/>{({ online_live: 'Online in diretta', in_person: 'In presenza', hybrid: 'Modalità ibrida' })[edition.delivery_mode] || edition.delivery_mode}</span>}
             {edition.frequency === 'weekly' && <span><Clock3 size={19}/>Frequenza settimanale</span>}
           </div>
-          <div className="course-edition-bottom"><div><small>Quota di partecipazione</small><strong>{hasPrice ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(price) : 'Da definire'}</strong></div><a href={`${interestUrl}&edizione=${encodeURIComponent(edition.id)}`} className="button button-primary">Manifesta interesse <ArrowRight size={17}/></a></div>
+          <div className="course-edition-bottom"><div><small>Quota di partecipazione</small><strong>{hasPrice ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(price) : 'Da definire'}</strong></div><a href={withUtm(`/manifestazione-interesse?corso=${encodeURIComponent(courseSlug)}&edizione=${encodeURIComponent(edition.id)}`)} className="button button-primary">Manifesta interesse <ArrowRight size={17}/></a></div>
         </article>;
       })}</div>}
       <p className="course-editions-note">La manifestazione d'interesse non costituisce iscrizione né prenotazione del posto. Le edizioni programmate sono soggette a conferma.</p>
@@ -470,7 +533,7 @@ function CoursePage(){
 } alt="Schermata di lavoro con analisi e documenti" loading="lazy"/></div>
       <div className="course-outcomes-copy"><p className="eyebrow">COMPETENZE IN USCITA</p><h2><EditorialTitle value={courseDetails?.outcomes_title} fallback={courseDetails.title}/></h2><p>{courseDetails?.outcomes_text || courseDetails.description}</p><div className="course-outcome-points">{(Array.isArray(courseDetails?.outcomes) && courseDetails.outcomes.length > 0 ? courseDetails.outcomes : (isPilotCourse ? fallbackOutcomes : [])).map((outcome, index) => { const Icon = [Sparkles, BookOpen, CheckCircle2][index % 3]; return <div key={outcome.id || index}><Icon/><strong>{outcome.title}</strong><span>{outcome.description}</span></div>; })}</div></div></div>
     </div></section>
-    {isMicroCourse && <section className="section course-next"><div className="container course-next-grid"><div><p className="eyebrow">PROSEGUIRE, SENZA VINCOLI</p><h2>Un micro-corso oggi.<br/><span>Un percorso domani.</span></h2><p><strong>La formazione si adatta alla tua vita.</strong><br/>Cinque incontri online di due ore, pensati anche per chi lavora. Segui le lezioni da dove preferisci e utilizza il tempo tra un incontro e l'altro per approfondire, sperimentare e applicare ciò che hai imparato.</p><p><strong>Un piccolo investimento, nuove possibilità.</strong><br/>Ogni micro-corso è un'esperienza formativa autonoma, con obiettivi concreti e un investimento contenuto. Puoi acquisire competenze specifiche, scoprire nuovi interessi e capire quali ambiti desideri approfondire.</p><p>Puoi fermarti al primo risultato oppure proseguire, combinando più micro-corsi in un percorso di crescita professionale.</p><a href={interestUrl} className="course-text-link">Manifesta interesse per il percorso <ArrowRight size={17}/></a></div><div className="course-path" aria-label="Vantaggi dei micro-corsi"><div><span className="path-number">01</span><div><strong>Impara senza fermarti</strong><small>Due ore online, compatibili con il lavoro</small></div></div><div><span className="path-number">02</span><div><strong>Sperimenta tra gli incontri</strong><small>Tempo per approfondire e mettere in pratica</small></div></div><div><span className="path-number">03</span><div><strong>Scopri la tua direzione</strong><small>Nuove competenze, interessi e opportunità</small></div></div></div></div></section>}
+    {isBaseCourse && <section className="section course-next"><div className="container course-next-grid"><div><p className="eyebrow">PROSEGUIRE, SENZA VINCOLI</p><h2>Un corso Base oggi.<br/><span>Nuove competenze domani.</span></h2><p><strong>La formazione si adatta alla tua vita.</strong><br/>Lezioni guidate ed esercitazioni, con un programma e una durata definiti per ciascun corso. Puoi approfondire e applicare quanto appreso anche tra un incontro e il successivo.</p><p><strong>Un piccolo investimento, nuove possibilità.</strong><br/>Ogni corso Base è un’esperienza formativa autonoma, con obiettivi concreti e un impegno definito. Puoi acquisire competenze specifiche, scoprire nuovi interessi e capire quali ambiti desideri approfondire.</p><p>Puoi fermarti al primo risultato oppure proseguire con un corso Professional e, successivamente, un Master.</p><a href={interestUrl} className="course-text-link">Manifesta interesse per il percorso <ArrowRight size={17}/></a></div><div className="course-path" aria-label="Vantaggi dei corsi Base"><div><span className="path-number">01</span><div><strong>Impara senza fermarti</strong><small>Un programma accessibile e orientato alla pratica</small></div></div><div><span className="path-number">02</span><div><strong>Sperimenta tra gli incontri</strong><small>Tempo per approfondire e mettere in pratica</small></div></div><div><span className="path-number">03</span><div><strong>Scopri la tua direzione</strong><small>Nuove competenze, interessi e opportunità</small></div></div></div></div></section>}
     <section className="course-personal-section"><div className="container course-personal"><div><p className="eyebrow">FORMAZIONE SU MISURA</p><h2>Hai esigenze formative diverse?</h2><p>Un programma per il tuo team, un approfondimento specifico o un percorso personalizzato? Raccontaci cosa vuoi ottenere.</p></div><a href={contactUrl} className="button final-cta-button">Richiedi un percorso personalizzato <ArrowUpRight size={17}/></a></div></section>
   </main>;
 }
@@ -558,7 +621,8 @@ function InterestPage() {
           ...(selectedEdition ? { edition_id: selectedEdition.id } : {}),
           privacy_notice_version: PRIVACY_VERSION,
           privacy_notice_acknowledged: values.acknowledged,
-          marketing_consent: values.marketing
+          marketing_consent: values.marketing,
+          ...getUtmParameters()
         })
       });
       if (!response.ok) {
@@ -580,7 +644,7 @@ function InterestPage() {
       <div className="container">
         <a
           className="course-back"
-          href={course ? `/corsi/${encodeURIComponent(course.slug)}/` : '/#corsi'}
+          href={withUtm(course ? `/corsi/${encodeURIComponent(course.slug)}/` : '/#corsi')}
         >
           ← Torna ai corsi
         </a>
@@ -603,12 +667,17 @@ function InterestPage() {
             <span>{formatEditionDate(selectedEdition.start_date)}{selectedEdition.end_date ? ` – ${formatEditionDate(selectedEdition.end_date)}` : ''}</span>
             {selectedEdition.calendar_name && <span>{selectedEdition.calendar_name}{selectedEdition.start_time && selectedEdition.end_time ? ` · ${formatEditionTime(selectedEdition.start_time)}–${formatEditionTime(selectedEdition.end_time)}` : ''}</span>}
             <span>{selectedEdition.status === 'confirmed' ? 'Partenza confermata' : 'Programmata · soggetta a conferma'}</span>
-            <a href={`/corsi/${encodeURIComponent(slug)}/#calendario`}>Cambia edizione</a>
+            <a href={withUtm(`/corsi/${encodeURIComponent(slug)}/#calendario`)}>Cambia edizione</a>
           </div>}
-          <a href={course ? `/corsi/${encodeURIComponent(course.slug)}/` : '/#corsi'} className="course-text-link">Consulta il programma <ArrowRight size={17}/></a>
+          <a
+            href={withUtm(course ? `/corsi/${encodeURIComponent(course.slug)}/` : '/#corsi')}
+            className="course-text-link"
+          >
+            Consulta il programma <ArrowRight size={17}/>
+          </a>
         </aside>
         <div className="interest-panel">
-          {status === 'success' ? <div className="interest-success" role="status"><CheckCircle2 size={38}/><h2>Richiesta ricevuta</h2><p>Grazie per l'interesse. Ti contatteremo per fornirti maggiori informazioni.</p><a href="/" className="button button-primary">Torna ad Academy <ArrowRight size={17}/></a></div> : <>
+          {status === 'success' ? <div className="interest-success" role="status"><CheckCircle2 size={38}/><h2>Richiesta ricevuta</h2><p>Grazie per l'interesse. Ti contatteremo per fornirti maggiori informazioni.</p><a href={withUtm('/')} className="button button-primary">Torna ad Academy <ArrowRight size={17}/></a></div> : <>
             <h2>Parliamo del tuo percorso.</h2>
             {selectedEdition && editionStatus === 'ready' && <p className="interest-panel-lead"><strong>Edizione del {formatEditionDate(selectedEdition.start_date)}</strong> · La richiesta sarà associata a questa edizione.</p>}
             {import.meta.env.MODE === 'test' && <p className="interest-notice" role="status">AMBIENTE DI TEST · Verifica la destinazione API prima di utilizzare dati reali.</p>}
@@ -643,7 +712,7 @@ function PrivacyPage() {
   }, []);
   return <main className="interest-page" id="home">
     <section className="interest-intro"><div className="container">
-      <a className="course-back" href="/">← Torna ad Academy</a>
+      <a className="course-back" href={withUtm('/#')}>← Torna ad Academy</a>
       <p className="eyebrow">EVOCONS ACADEMY · PRIVACY</p>
       <h1>Informativa sul <span>trattamento dei dati.</span></h1>
       <p>Informativa ai sensi dell’articolo 13 del Regolamento (UE) 2016/679 (GDPR).</p>
@@ -655,10 +724,43 @@ function PrivacyPage() {
         <h2>1. Titolare del trattamento</h2>
         <p>EvoCons S.r.l.s.<br/>Via Nicola Coviello, 32 — 00165 Roma (RM)<br/>Email: <a href="mailto:privacy@evocons.it">privacy@evocons.it</a></p>
         <h2>2. Dati trattati</h2>
-        <p>In relazione alle manifestazioni d'interesse sono trattati nome, cognome, indirizzo email, numero telefonico (facoltativo), corso di interesse, scelte relative alle comunicazioni promozionali e informazioni tecniche necessarie a documentare la richiesta e le scelte espresse. Durante la navigazione possono inoltre essere trattati dati tecnici relativi alle richieste HTTP, al dispositivo, al browser e alle prestazioni delle pagine, secondo quanto descritto nella sezione 10.</p>
+        <p>
+          In relazione alle manifestazioni d'interesse sono trattati
+          nome, cognome, indirizzo email, numero telefonico (facoltativo),
+          corso di interesse, scelte relative alle comunicazioni
+          promozionali e informazioni tecniche necessarie a documentare
+          la richiesta e le scelte espresse. Durante la navigazione
+          possono inoltre essere trattati dati tecnici relativi alle
+          richieste HTTP, al dispositivo, al browser e alle prestazioni
+          delle pagine, secondo quanto descritto nella sezione 10.
+        </p>
+
+        <p>
+          Quando un visitatore accede al sito attraverso collegamenti
+          contenenti parametri di campagna (UTM), EvoCons può raccogliere
+          informazioni relative alla provenienza dichiarata del
+          collegamento, al canale e alla campagna di riferimento.
+          Tali parametri possono essere mantenuti negli indirizzi
+          dei collegamenti interni durante la navigazione e associati
+          alla manifestazione d'interesse eventualmente inviata.
+          Non vengono memorizzati tramite sessionStorage o localStorage
+          per questa finalità.
+        </p>
         <h2>3. Finalità e basi giuridiche</h2>
         <p><strong>Richieste sui corsi.</strong> Utilizziamo i dati per rispondere alle manifestazioni d’interesse e fornire informazioni sui programmi, sulle modalità di partecipazione e sulle prossime date. La base giuridica è l’articolo 6, paragrafo 1, lettera b), GDPR (misure precontrattuali richieste dall’interessato).</p>
         <p><strong>Newsletter e comunicazioni promozionali.</strong> Solo con consenso facoltativo potremo inviare aggiornamenti sui corsi, workshop, eventi e iniziative EvoCons. La base giuridica è l’articolo 6, paragrafo 1, lettera a), GDPR. Il consenso può essere revocato in qualsiasi momento scrivendo a <a href="mailto:privacy@evocons.it">privacy@evocons.it</a>, senza pregiudicare la liceità del trattamento precedente alla revoca.</p>
+        <p>
+  <strong>Analisi dell'efficacia delle iniziative di comunicazione.</strong>
+  {' '}Le informazioni relative alla provenienza delle
+  manifestazioni d'interesse sono utilizzate per valutare
+  l'efficacia delle campagne informative e promozionali,
+  comprendere quali iniziative generano richieste sui
+  percorsi formativi e migliorare la comunicazione di EvoCons.
+  Il trattamento è oggetto di valutazione sulla base del
+  legittimo interesse del titolare, ai sensi dell'articolo 6,
+  paragrafo 1, lettera f), GDPR, tenendo conto della necessità
+  e proporzionalità rispetto alle finalità perseguite.
+</p>
         <h2>4. Conferimento dei dati</h2>
         <p>Nome, cognome e indirizzo email sono necessari per gestire la richiesta. Il telefono e il consenso marketing sono facoltativi. La mancata prestazione del consenso marketing non impedisce l’invio della richiesta.</p>
         <h2>5. Modalità e destinatari</h2>
