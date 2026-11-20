@@ -1,0 +1,21 @@
+/* Course next — layout refinement, October 2026 */
+@media (min-width: 901px) {
+  .course-next-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.85fr);
+    gap: 48px;
+    align-items: center;
+  }
+  .course-next .course-next-grid h2 {
+    font-size: clamp(35px, 3.15vw, 46px);
+    line-height: 1.13;
+    letter-spacing: -1.5px;
+  }
+  .course-next .course-next-grid > div > p:not(.eyebrow) {
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  .course-next .course-path { padding: 22px 24px; }
+  .course-next .course-path strong { font-size: 17px; }
+  .course-next .course-path small { font-size: 13px; }
+}
+

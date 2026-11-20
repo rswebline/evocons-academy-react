@@ -1,0 +1,26 @@
+/* Academy footer */
+.academy-footer{background:#071b3d;color:#e9f1ff;padding:72px 0 0}
+.footer-top{display:grid;grid-template-columns:1.45fr .85fr .95fr 1.1fr;gap:42px;padding-bottom:65px}
+.footer-brand{font-size:23px;margin-bottom:22px}
+.footer-brand .brand-mark{background:#fff;color:#092654}
+.footer-brand .brand-name{color:#fff}
+.footer-brand .brand-divider{background:#627da4}
+.footer-brand .brand-academy{color:#68a9ff}
+.footer-intro>p{font-size:14px;line-height:1.8;color:#bdcee8;max-width:310px;margin:0 0 20px}
+.footer-corporate{display:inline-flex;align-items:center;gap:7px;color:#89baff;font-size:13px;font-weight:700}
+.footer-top h2{font-size:14px;font-weight:800;margin:5px 0 22px;color:#fff}
+.footer-links{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.footer-links h2{margin-bottom:8px}
+.footer-links a,.footer-links p{font-size:13px;color:#bdcee8;margin:0;line-height:1.5}
+.footer-links a:hover,.footer-bottom a:hover{color:#fff}
+.footer-links p{display:flex;align-items:center;gap:10px}
+.footer-links svg{color:#77b1ff;flex-shrink:0}
+.footer-contact{padding:23px;background:#142e55;border:1px solid #28466c;border-radius:20px;align-self:start}
+.footer-contact h2{font-size:19px;line-height:1.3;margin:0 0 10px}
+.footer-contact p{font-size:13px;line-height:1.6;color:#c1d0e7;margin:0 0 20px}
+.footer-button{background:#fff;color:#124de0;width:100%;box-shadow:none}
+.footer-bottom{border-top:1px solid #294366;min-height:75px;display:flex;align-items:center;justify-content:space-between;gap:16px;color:#a8bbd8;font-size:12px}
+.footer-bottom a{display:inline-flex;align-items:center;gap:5px}
+@media(max-width:1000px){.footer-top{grid-template-columns:1fr 1fr;gap:38px}.footer-contact{max-width:380px}}
+@media(max-width:720px){.academy-footer{padding-top:48px}.footer-top{grid-template-columns:1fr 1fr;gap:32px 18px;padding-bottom:42px}.footer-intro,.footer-contact{grid-column:1/-1}.footer-intro>p{max-width:480px}.footer-contact{max-width:none}.footer-bottom{padding:20px 0;align-items:flex-start;flex-direction:column;min-height:0}}
+

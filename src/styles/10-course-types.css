@@ -1,0 +1,7 @@
+/* Distinzione visiva dei percorsi Academy */
+.course-kind-professional {
+  background: #173b78;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
