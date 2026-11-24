@@ -1,0 +1,23 @@
+/* Sprint 1 — Filtri catalogo e navigazione card */
+.catalog-reset{border:0;background:none;color:#2458f5;text-decoration:underline;cursor:pointer;font:inherit}
+.course-art-link{position:absolute;inset:0;z-index:1;display:block}
+.course-art-link img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .4s ease}
+.course-card:hover .course-art-link img{transform:scale(1.045)}
+.course-title-link:hover{color:#2458f5}
+.course-art-link:focus-visible,.course-title-link:focus-visible{outline:3px solid #2458f5;outline-offset:-3px}
+@media(prefers-reduced-motion:reduce){.course-art-link img{transition:none}.course-card:hover .course-art-link img{transform:none}}
+
+/* Filtri a selezione immediata */
+.catalog-filters{display:grid;gap:18px;padding:22px 24px;margin:0 0 28px;background:#f6f9ff;border:1px solid #e4edf9;border-radius:18px}
+.catalog-filter-group{display:grid;gap:9px}
+.catalog-filter-label{font-size:11px;letter-spacing:.65px;text-transform:uppercase;font-weight:800;color:#53647e}
+.catalog-filter-options{display:flex;flex-wrap:wrap;gap:8px}
+.catalog-filter-chip{min-height:42px;padding:9px 18px;border:1px solid #cbdaf1;border-radius:24px;background:#fff;color:#284366;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.catalog-filter-chip:hover:not(:disabled){border-color:#2458f5;color:#2458f5}
+.catalog-filter-chip[aria-pressed=true],.catalog-filter-chip[aria-pressed=true]:hover{background:#2458f5;border-color:#2458f5;color:#fff}
+.catalog-filter-chip:disabled{opacity:.45;cursor:not-allowed}
+.catalog-filter-chip:focus-visible,.catalog-reset:focus-visible{outline:2px solid #2458f5;outline-offset:3px}
+.catalog-filter-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #e4edf9;padding-top:12px}
+.catalog-result-count{font-size:12px;color:#53647e;font-weight:700}
+@media(max-width:720px){.catalog-filters{padding:16px;gap:16px}.catalog-filter-chip{padding:8px 13px;min-height:44px;font-size:12px}}
+@media(prefers-reduced-motion:reduce){.catalog-filter-chip{transition:none}}

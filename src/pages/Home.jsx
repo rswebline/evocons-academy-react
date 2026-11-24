@@ -66,10 +66,42 @@ function WhyAcademy(){
 
 // Le date MySQL sono restituite come ISO UTC: formattarle in UTC evita slittamenti di giorno.
 
+
+const COURSE_AREAS = [
+  { value: 'ai', label: 'Artificial Intelligence' },
+  { value: 'data-analytics', label: 'Data Analytics' },
+  { value: 'cybersecurity', label: 'Cybersecurity' }
+];
+
+// Legge esclusivamente tag effettivamente restituiti dall'API.
+// Supporta stringhe, array e oggetti espansi da Directus.
+function normalizeCourseTags(course) {
+  const raw = course.tags ?? [];
+  const values = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',') : [];
+  return [...new Set(values.flatMap(item => {
+    if (typeof item === 'string') return [item];
+    if (!item || typeof item !== 'object') return [];
+    const tag = item.course_tags_id ?? item.tag_id ?? item.tag ?? item;
+    if (typeof tag === 'string') return [tag];
+    if (tag && typeof tag === 'object') return [tag.slug ?? tag.code ?? tag.name ?? ''];
+    return [];
+  }).map(value => String(value).trim().toLowerCase()).filter(Boolean))];
+}
+
+function normalizedCategory(category) {
+  if (category === 'micro-course') return 'base';
+  if (category === 'specialization') return 'professional';
+  return category;
+}
+
 function Courses(){
   const [publishedCourses, setPublishedCourses] = React.useState([]);
   const [catalogStatus, setCatalogStatus] = React.useState('loading');
   const [editionsBySlug, setEditionsBySlug] = React.useState({});
+  const [selectedLevel, setSelectedLevel] = React.useState('all');
+  const [selectedArea, setSelectedArea] = React.useState('all');
+  const availableAreas = COURSE_AREAS.filter(area => publishedCourses.some(course => normalizeCourseTags(course).includes(area.value)));
+  const filteredCourses = publishedCourses.filter(course => (selectedLevel === 'all' || normalizedCategory(course.category) === selectedLevel) && (selectedArea === 'all' || normalizeCourseTags(course).includes(selectedArea)));
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -104,7 +136,27 @@ function Courses(){
     {catalogStatus === 'loading' && <p role="status">Caricamento dei corsi in corso…</p>}
     {catalogStatus === 'error' && <p role="alert">Il catalogo non è momentaneamente disponibile. Riprova più tardi.</p>}
     {catalogStatus === 'ready' && publishedCourses.length === 0 && <p>Al momento non ci sono corsi pubblicati.</p>}
-    {catalogStatus === 'ready' && publishedCourses.length > 0 && <div className="course-grid">{publishedCourses.map(course => {
+    {catalogStatus === 'ready' && publishedCourses.length > 0 && <>
+      <div className="catalog-filters" aria-label="Filtra i percorsi formativi">
+        <div className="catalog-filter-group" role="group" aria-label="Tipologia del percorso">
+          <span className="catalog-filter-label">Tipologia del percorso</span>
+          <div className="catalog-filter-options">
+            {[{value:'all',label:'Tutti'},{value:'base',label:'Base'},{value:'professional',label:'Professional'},{value:'master',label:'Master'}].map(item => <button key={item.value} type="button" className="catalog-filter-chip" aria-pressed={selectedLevel === item.value} onClick={() => setSelectedLevel(item.value)}>{item.label}</button>)}
+          </div>
+        </div>
+        <div className="catalog-filter-group" role="group" aria-label="Ambito formativo">
+          <span className="catalog-filter-label">Ambito formativo</span>
+          <div className="catalog-filter-options">
+            {[{value:'all',label:'Tutti'}, ...COURSE_AREAS].map(item => <button key={item.value} type="button" className="catalog-filter-chip" aria-pressed={selectedArea === item.value} disabled={item.value !== 'all' && !availableAreas.some(area => area.value === item.value)} onClick={() => setSelectedArea(item.value)}>{item.label}</button>)}
+          </div>
+        </div>
+        <div className="catalog-filter-summary">
+          <span className="catalog-result-count" role="status">{filteredCourses.length} {filteredCourses.length === 1 ? 'corso' : 'corsi'}</span>
+          {(selectedLevel !== 'all' || selectedArea !== 'all') && <button type="button" className="catalog-reset" onClick={() => {setSelectedLevel('all');setSelectedArea('all');}}>Azzera filtri ×</button>}
+        </div>
+      </div>
+      {filteredCourses.length === 0 && <p role="status">Nessun corso corrisponde ai filtri selezionati. <button type="button" className="catalog-reset" onClick={() => { setSelectedLevel('all'); setSelectedArea('all'); }}>Azzera filtri</button></p>}
+      <div className="course-grid">{filteredCourses.map(course => {
       const isProfessional = ['professional', 'specialization'].includes(course.category);
       const isMaster = course.category === 'master';
       const presentation = courses.find(item => item.slug === course.slug);
@@ -131,17 +183,17 @@ const formatLabel =
   deliveryLabels[course.delivery_mode] || 'Modalità da confermare';
 
       return <article className="course-card" key={course.id || course.slug}>
-        <div className={`course-art course-art-${theme}`}><img className="course-art-image" src={image} alt={imageAlt} loading="lazy" decoding="async" onError={event => { if (event.currentTarget.src !== fallbackImage) event.currentTarget.src = fallbackImage; }}/><span className={`course-kind ${isProfessional ? 'course-kind-professional' : isMaster ? 'course-kind-master' : ''}`}>
+        <div className={`course-art course-art-${theme}`}><a className="course-art-link" href={withUtm(`/corsi/${encodeURIComponent(course.slug)}/`)} aria-label={`Scopri il corso ${course.title}`}><img className="course-art-image" src={image} alt={imageAlt} loading="lazy" decoding="async" onError={event => { if (event.currentTarget.src !== fallbackImage) event.currentTarget.src = fallbackImage; }}/></a><span className={`course-kind ${isProfessional ? 'course-kind-professional' : isMaster ? 'course-kind-master' : ''}`}>
   {categoryLabel}
 </span><span className="course-art-caption">{presentation?.label || 'Evocons Academy'}</span></div>
-        <div className="course-body"><h3>{course.title}</h3><p>{course.description || 'Scopri il percorso formativo di Evocons Academy.'}</p><div className="course-meta">
+        <div className="course-body"><h3><a className="course-title-link" href={withUtm(`/corsi/${encodeURIComponent(course.slug)}/`)}>{course.title}</a></h3><p>{course.description || 'Scopri il percorso formativo di Evocons Academy.'}</p><div className="course-meta">
   <span><Clock3 size={15}/>{durationLabel}</span>
   <span><MonitorPlay size={15}/>{formatLabel}</span>
 </div>
 {editionsBySlug[course.slug]?.length > 0 && <div className="course-edition-dates"><strong>Prossime edizioni</strong>{editionsBySlug[course.slug].map(edition => <span key={edition.id || edition.edition_code}><CalendarDays size={15} aria-hidden="true"/>{formatEditionDate(edition.start_date)}</span>)}</div>}
  <a className="course-status course-link" href={detailAvailable ? withUtm(`/corsi/${encodeURIComponent(course.slug)}/`) : contactUrl}>{detailAvailable ? 'Scopri il corso →' : 'Richiedi informazioni →'}</a></div>
       </article>;
-    })}</div>}
+    })}</div></>}
     <p className="course-disclaimer">Consulta la pagina di ciascun corso per conoscere programma, durata, prossime edizioni e modalità di partecipazione.</p>
   </div></section>;
 }
