@@ -67,11 +67,19 @@ function WhyAcademy(){
 // Le date MySQL sono restituite come ISO UTC: formattarle in UTC evita slittamenti di giorno.
 
 
-const COURSE_AREAS = [
-  { value: 'ai', label: 'Artificial Intelligence' },
-  { value: 'data-analytics', label: 'Data Analytics' },
-  { value: 'cybersecurity', label: 'Cybersecurity' }
-];
+function normalizeTaxonomy(tags) {
+  if (!Array.isArray(tags)) return [];
+  const areas = new Map();
+  for (const tag of tags) {
+    if (typeof tag?.slug !== 'string' || typeof tag.name !== 'string') continue;
+    const value = tag.slug.trim().toLowerCase();
+    const label = tag.name.trim();
+    if (!value || !label || value === 'all') continue;
+    const sort = tag.sort == null || tag.sort === '' ? Infinity : Number(tag.sort);
+    areas.set(value, { value, label, sort: Number.isFinite(sort) ? sort : Infinity });
+  }
+  return [...areas.values()].sort((a, b) => (a.sort - b.sort) || a.label.localeCompare(b.label, 'it') || a.value.localeCompare(b.value));
+}
 
 // Legge esclusivamente tag effettivamente restituiti dall'API.
 // Supporta stringhe, array e oggetti espansi da Directus.
@@ -100,7 +108,8 @@ function Courses(){
   const [editionsBySlug, setEditionsBySlug] = React.useState({});
   const [selectedLevel, setSelectedLevel] = React.useState('all');
   const [selectedArea, setSelectedArea] = React.useState('all');
-  const availableAreas = COURSE_AREAS.filter(area => publishedCourses.some(course => normalizeCourseTags(course).includes(area.value)));
+  const [courseAreas, setCourseAreas] = React.useState([]);
+  const availableAreas = courseAreas.filter(area => publishedCourses.some(course => normalizeCourseTags(course).includes(area.value)));
   const filteredCourses = publishedCourses.filter(course => (selectedLevel === 'all' || normalizedCategory(course.category) === selectedLevel) && (selectedArea === 'all' || normalizeCourseTags(course).includes(selectedArea)));
 
   React.useEffect(() => {
@@ -112,6 +121,10 @@ function Courses(){
         const payload = await response.json();
         if (!Array.isArray(payload.data)) throw new Error('Formato catalogo non valido');
         const validCourses = payload.data.filter(course => course && typeof course.slug === 'string' && typeof course.title === 'string');
+        const taxonomy = Array.isArray(payload.meta?.tags)
+          ? payload.meta.tags
+          : validCourses.flatMap(course => Array.isArray(course.tags) ? course.tags : []);
+        setCourseAreas(normalizeTaxonomy(taxonomy));
         setPublishedCourses(validCourses);
         setCatalogStatus('ready');
         // Un errore sul calendario di un corso non deve rendere indisponibile il catalogo.
@@ -147,7 +160,7 @@ function Courses(){
         <div className="catalog-filter-group" role="group" aria-label="Ambito formativo">
           <span className="catalog-filter-label">Ambito formativo</span>
           <div className="catalog-filter-options">
-            {[{value:'all',label:'Tutti'}, ...COURSE_AREAS].map(item => <button key={item.value} type="button" className="catalog-filter-chip" aria-pressed={selectedArea === item.value} disabled={item.value !== 'all' && !availableAreas.some(area => area.value === item.value)} onClick={() => setSelectedArea(item.value)}>{item.label}</button>)}
+            {[{value:'all',label:'Tutti'}, ...courseAreas].map(item => <button key={item.value} type="button" className="catalog-filter-chip" aria-pressed={selectedArea === item.value} disabled={item.value !== 'all' && !availableAreas.some(area => area.value === item.value)} onClick={() => setSelectedArea(item.value)}>{item.label}</button>)}
           </div>
         </div>
         <div className="catalog-filter-summary">
